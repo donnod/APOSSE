@@ -1,0 +1,6 @@
+[submodule "Clusion"]
+	path = Clusion
+	url = https://github.com/encryptedsystems/Clusion.git
+[submodule "JavaReedSolomon"]
+	path = JavaReedSolomon
+	url = https://github.com/Backblaze/JavaReedSolomon.git
