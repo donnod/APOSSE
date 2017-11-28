@@ -1,4 +1,4 @@
-/** * Copyright (C) 2016 Tarik Moataz
+/** * Copyright (C) 2017 Guoxing Chen
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,9 +16,7 @@
 
 //***********************************************************************************************//
 
-// This file contains most cryptographic primitives : AES in CTR mode for file and string encryption, 
-// AES with synthetic IV, HMAC, CMAC-AES and HCB1 online cipher. The file also contains some other
-// tools for bytes manipulation and some variations of hash functions to be user
+// This file contains APOModules
 //***********************************************************************************************//
 
 package org.apo.sse;
@@ -63,8 +61,6 @@ public class APOModules {
 
         });
         for (Map.Entry<String, Integer> entry : list) {
-            if (entry.getValue() > 2500) continue;
-            //System.out.println(entry.getKey() + ":" + entry.getValue());
             topCommonKeywords.putAll(entry.getKey(), originalKeywordLists.get(entry.getKey()));
             if (k-- == 0) break;
         }
@@ -73,7 +69,7 @@ public class APOModules {
 
 	public static Multimap<String, String> obfuscateKeywordLists(Multimap<String, String> keywordLists, ArrayList<File> listOfFile) {
 		Multimap<String, String> obfuscatedKeywordLists = HashMultimap.create();
-		Random rng = new Random(6666);
+		Random rng = new Random();
 
 		List<String> listOfKeyword = new ArrayList<String>(keywordLists.keySet());
 		for (String keyword : listOfKeyword) {
@@ -104,7 +100,7 @@ public class APOModules {
     }
 
 	public static List<String> erasureCodeDecoding(List<String> listOfFile, String shardsPathName, String resultsPathName) throws IOException {
-        List<String> listOfDecodedFile = new ArrayList<>();
+        List<String> listOfDecodedFile = new ArrayList<String>();
 
         Multimap<String, Byte> shardMap = HashMultimap.create();
 
@@ -115,10 +111,10 @@ public class APOModules {
         }
 
         for (String fileName : shardMap.keySet()) {
-            //if (shardMap.get(fileName).size() >= k) {
+            if (shardMap.get(fileName).size() >= k) {
                 listOfDecodedFile.add(fileName + shardMap.get(fileName));
                 decodeOneFile(fileName, shardMap.get(fileName), shardsPathName, resultsPathName);
-            //}
+            }
         }
 
         return listOfDecodedFile;
@@ -162,16 +158,11 @@ public class APOModules {
 
         // Write out the resulting files.
         for (int i = 0; i < TOTAL_SHARDS; i++) {
-            //String outputFileAbsolutePath = shardsPathName + inputFile.getAbsolutePath().substring(originalPathName.length()) + "." + i;
-            //Path parentPath = Paths.get(outputFileAbsolutePath);
-            //Files.createDirectories(parentPath);
-            //System.out.print(shardsPathName + inputFile.getAbsolutePath().substring(originalPathName.length()) + "." + i);
             File outputFile = new File(shardsPathName + inputFile.getAbsolutePath().substring(originalPathName.length()) + "." + i);
             outputFile.getParentFile().mkdirs();
             OutputStream out = new FileOutputStream(outputFile);
             out.write(shards[i]);
             out.close();
-            //System.out.println("wrote " + outputFile);
         }
     }
 
@@ -199,7 +190,6 @@ public class APOModules {
                 InputStream in = new FileInputStream(shardFile);
                 in.read(shards[i], 0, shardSize);
                 in.close();
-                //System.out.println("Read " + shardFile);
             }
         }
 
@@ -234,6 +224,5 @@ public class APOModules {
         File decodedFile = new File(resultsPathName, inputFile);
         OutputStream out = new FileOutputStream(decodedFile);
         out.write(allBytes, BYTES_IN_INT, fileSize);
-        //System.out.println("Wrote " + decodedFile);
     }
 }

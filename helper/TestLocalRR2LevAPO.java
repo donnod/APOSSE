@@ -1,4 +1,4 @@
-/** * Copyright (C) 2016 Tarik Moataz
+/** * Copyright (C) 2017 Guoxing Chen
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,12 @@
 
 package org.crypto.sse;
 
+import org.apo.sse.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.google.common.collect.Multimap;
 import org.apache.commons.io.FileUtils;
@@ -31,30 +33,33 @@ import org.apache.commons.io.FileUtils;
 public class TestLocalRR2LevAPO {
 
 	public static void main(String[] args) throws Exception {
-
-		long startTime = System.nanoTime();
-
+	
 		BufferedReader keyRead = new BufferedReader(new InputStreamReader(System.in));
 
-		//System.out.println("Enter your password :");
+		System.out.println("Enter your password :");
 
-		//String pass = keyRead.readLine();
-		String pass = "asdf";
+		String pass = keyRead.readLine();
 
-		byte[] sk = RR2Lev.keyGen(256, pass, "salt/salt", 100000);
+		List<byte[]> listSK = IEX2Lev.keyGen(256, pass, "salt/salt", 100000);
 
-		//System.out.println("Enter the relative path name of the folder that contains the files to make searchable");
+		System.out.println("Enter the relative path name of the folder that contains the files to make searchable");
 
-		//String pathName = keyRead.readLine();
-		String pathName = "/home/donnod/Research/dataset/enron_mail_20150507_extracted";
+		String pathName = keyRead.readLine();
 
+		System.out.println("Enter the relative path name of the folder that stores the file shards");
+
+		String shardsPathName = keyRead.readLine();
+
+		System.out.println("Enter the relative path name of the folder that stores the search results");
+
+		String queryPathName = keyRead.readLine();
 
 		ArrayList<File> listOfFile = new ArrayList<File>();
 		TextProc.listf(pathName, listOfFile);
 
 		TextProc.TextProc(false, pathName);
 
-		Multimap<String, String> topk = APOModules.getTopCommonKeywods(TextExtractPar.lp1, 500);
+		// Multimap<String, String> topk = APOModules.getTopCommonKeywods(TextExtractPar.lp1, 500);
 
 		// The two parameters depend on the size of the dataset. Change
 		// accordingly to have better search performance
@@ -65,30 +70,20 @@ public class TestLocalRR2LevAPO {
 		// Construction of the global multi-map
 		System.out.println("\nBeginning of Encrypted Multi-map creation \n");
 
-		RR2Lev twolev = RR2Lev.constructEMMParGMM(sk, APOModules.obfuscateKeywordLists(topk, listOfFile), bigBlock, smallBlock, dataSize);
+		RR2Lev twolev = RR2Lev.constructEMMParGMM(listSK.get(0), APOModules.obfuscateKeywordLists(TextExtractPar.lp1, listOfFile), bigBlock, smallBlock, dataSize);
 
-		long endTime = System.nanoTime();
-
-		System.out.println("Index build time " + (endTime - startTime));
-
-		String shardsPathName = "/home/donnod/Research/dataset/apoShards";
 		FileUtils.cleanDirectory(new File(shardsPathName));
+		FileUtils.cleanDirectory(new File(queryPathName));
 		APOModules.erasureCodeEncoding(listOfFile, pathName, shardsPathName);
-
-		long erasureCodingTime = System.nanoTime();
-
-		System.out.println("Erasure coding time " + (erasureCodingTime - endTime));
-
-		String queryPathName = "/home/donnod/Research/dataset/apoQueryResults";
-
+		
 		while (true) {
 
 			System.out.println("Enter the keyword to search for:");
 			String keyword = keyRead.readLine();
-			byte[][] token = RR2Lev.token(sk, keyword);
+			byte[][] token = RR2Lev.token(listSK.get(0), keyword);
+			
             FileUtils.cleanDirectory(new File(queryPathName));
 			System.out.println("Final Result: " + APOModules.erasureCodeDecoding(twolev.query(token, twolev.getDictionary(), twolev.getArray()), shardsPathName, queryPathName));
-
 		}
 
 	}
